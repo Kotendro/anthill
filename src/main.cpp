@@ -1,0 +1,35 @@
+#include "simulation.hpp"
+#include "render.hpp"
+#include "raylib.h"
+#include <ctime>
+#include <cstdlib>
+
+int main(void)
+{
+    const int WIDTH = 40;
+    const int HEIGHT = 30;
+    const int CELL_SIZE = 20;
+    const int SCREEN_WIDTH = WIDTH*CELL_SIZE;
+    const int SCREEN_HEIGHT = HEIGHT*CELL_SIZE;
+
+
+    Simulation sim(WIDTH, HEIGHT, 200);
+    sim.init();
+
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT,"anthill");
+    SetTargetFPS(60);
+
+    while (!WindowShouldClose())
+    {
+        float delta_time = GetFrameTime();
+        sim.update(delta_time);
+
+        BeginDrawing();
+            ClearBackground(RAYWHITE);
+            draw_simulation(sim, CELL_SIZE);
+        EndDrawing();
+    }
+    CloseWindow();
+
+    return 0;
+}
