@@ -4,15 +4,15 @@
 #include <cmath>
 #include <random>
 
-std::random_device dev;
-std::mt19937 rng(dev());
-std::uniform_int_distribution<std::mt19937::result_type> dist(-20, 20);
+
 
 Simulation::Simulation(int width, int height, int ants_count) 
-: width_(width), height_(height), ants_count_(ants_count)
+: width_(width), height_(height), ants_count_(ants_count), rng_(std::random_device{}()), dist_(-90.0f, 90.0f)
 {
     grid_.reserve(width_*height_);
     ants_.reserve(ants_count_);
+
+    lua_.script_file("scripts/ant.lua");
 }
 
 void Simulation::init() {
@@ -24,7 +24,7 @@ void Simulation::init() {
 
 void Simulation::update(float delta_time) {
     for (auto &ant : ants_) {
-        ant.angle_ += dist(rng) * delta_time;
+        ant.angle_ += dist_(rng_) * delta_time * 10.f;
         
         float radians = ant.angle_ * (std::numbers::pi / 180);
         ant.x_ += std::cos(radians) * ant.speed_ * delta_time;

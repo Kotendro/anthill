@@ -1,12 +1,14 @@
 #pragma once
 
 #include <vector>
+#include <random>
+#include <sol/sol.hpp> 
 
 struct Ant
 {
     float x_, y_;
     float angle_;
-    float speed_=30.0f;
+    float speed_=10.0f;
     Ant(float x, float y, float angle)
     : x_(x), y_(y), angle_(angle) {}
 };
@@ -23,6 +25,11 @@ private:
     int ants_count_;
     std::vector<Cell> grid_;
     std::vector<Ant> ants_;
+
+    std::mt19937 rng_;
+    std::uniform_real_distribution<float> dist_;
+
+    sol::state lua_;
 
 public:
     const int get_width() const {return width_;}
