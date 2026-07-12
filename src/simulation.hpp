@@ -2,20 +2,8 @@
 
 #include <vector>
 #include <random>
-#include <sol/sol.hpp> 
-
-struct Ant
-{
-    float x_, y_;
-    float angle_;
-    float speed_=10.0f;
-    Ant(float x, float y, float angle)
-    : x_(x), y_(y), angle_(angle) {}
-};
-
-struct Cell {
-
-};
+#include <sol/sol.hpp>
+#include "types.hpp"
 
 class Simulation
 {
@@ -31,7 +19,10 @@ private:
 
     sol::state lua_;
 
+    Cell& get_cell(int x, int y);
+
 public:
+    const Cell& get_cell (int x, int y) const;
     const int get_width() const {return width_;}
     const int get_height() const {return height_;}
     const std::vector<Cell>& get_grid() const {return grid_;}
