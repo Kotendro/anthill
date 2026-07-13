@@ -7,7 +7,8 @@
 
 
 Simulation::Simulation(int width, int height, int ants_count) 
-: width_(width), height_(height), ants_count_(ants_count), rng_(std::random_device{}()), dist_(-90.0f, 90.0f)
+: width_(width), height_(height), ants_count_(ants_count), rng_(std::random_device{}()), dist_(-90.0f, 90.0f),
+anthill_(10, 10)
 {
     grid_.resize(width_*height_);
     ants_.reserve(ants_count_);
@@ -16,14 +17,21 @@ Simulation::Simulation(int width, int height, int ants_count)
 }
 
 void Simulation::init() {
+    // Ants
     for (int i=0; i < ants_count_; i++) {
-        Ant ant{0, 0, 0};
+        Ant ant{anthill_.x_, anthill_.y_, 0};
         ants_.push_back(ant);
     }
 }
 
 void Simulation::update(float delta_time) {
-    for (auto &ant : ants_) {
+    // Cells
+    for (Cell& cell : grid_) {
+        cell.pheromone_.evaporate(0.01f);
+    }
+
+    // Ants
+    for (Ant& ant : ants_) {
         ant.angle_ += dist_(rng_) * delta_time * 10.f;
         
         float radians = ant.angle_ * (std::numbers::pi / 180);
@@ -34,6 +42,17 @@ void Simulation::update(float delta_time) {
         if (ant.x_ >= width_) ant.x_ = 0;
         if (ant.y_ < -1) ant.y_ = height_ - 1;
         if (ant.y_ >= height_) ant.y_ = 0;
+
+        Cell& cell = get_cell(ant.x_, ant.y_);
+        cell.pheromone_.set(PheromoneType::Home, 0.9f);
+    }
+
+    // Anthill
+    for (float dx=-1.0f; dx<2.0f; dx+=1.0f) {
+        for (float dy=-1.0f; dy<2.0f; dy+=1.0f) {
+            Cell& cell = get_cell(anthill_.x_+dx, anthill_.y_+dy);
+            cell.pheromone_.set(PheromoneType::Home, 1.0f);
+        }
     }
 }
 

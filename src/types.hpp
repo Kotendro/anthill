@@ -1,12 +1,34 @@
 #pragma once
 
-struct Pheromone {
-    // intensity_ = 0.0f - 1.0f
-    float food_intensity_; 
-    float home_intensity_;
+#include <array>
 
-    Pheromone(float food_intensity=0.0f, float home_intensity=0.0f)
-    : food_intensity_(food_intensity), home_intensity_(home_intensity) {}
+enum class PheromoneType {
+    Food,
+    Home,
+    Count
+};
+
+struct Pheromone {
+    // intensities_ = 0.0f - 1.0f
+    std::array<float, static_cast<size_t>(PheromoneType::Count)> intensities_;
+
+    Pheromone() {
+        intensities_.fill(0.0f);
+    }
+
+    float get(PheromoneType type) const {
+        return intensities_[static_cast<size_t>(type)];
+    }
+
+    void set(PheromoneType type, float value) {
+        intensities_[static_cast<size_t>(type)] = std::clamp(value, 0.0f, 1.0f);
+    }
+    
+    void evaporate(float delta) {
+        for (auto& intensity : intensities_) {
+            intensity = std::max(0.0f, intensity - delta);
+        }
+    }
 };
 
 struct Ant
@@ -15,7 +37,7 @@ struct Ant
     float angle_; // В градусах
     float speed_=10.0f;
     bool has_food=false;
-    Pheromone pheromone_out_ {0.0f, 0.0f};
+    // Pheromone pheromone_out_;
 
     Ant(float x, float y, float angle)
     : x_(x), y_(y), angle_(angle) {}
@@ -25,7 +47,7 @@ struct Anthill
 {
     float x_, y_;
     int food_storage_ = 0;
-    Pheromone pheromone_ {0.0f, 1.0f};
+    // Pheromone pheromone_out_;
 
     Anthill(float x, float y)
     : x_(x), y_(y) {}
@@ -33,6 +55,6 @@ struct Anthill
 
 
 struct Cell {
-    Pheromone pheromone_ {0.0f, 0.0f};
+    Pheromone pheromone_;
     int food_units_ = 0;
 };

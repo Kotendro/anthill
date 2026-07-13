@@ -13,6 +13,7 @@ private:
     int ants_count_;
     std::vector<Cell> grid_;
     std::vector<Ant> ants_;
+    Anthill anthill_;
 
     std::mt19937 rng_;
     std::uniform_real_distribution<float> dist_;
@@ -27,6 +28,7 @@ public:
     const int get_height() const {return height_;}
     const std::vector<Cell>& get_grid() const {return grid_;}
     const std::vector<Ant>& get_ants() const {return ants_;}
+    const Anthill get_anthill() const {return anthill_;}
 
     Simulation(int width, int height, int ant_count);
     void init();
