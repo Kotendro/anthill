@@ -7,8 +7,8 @@
 
 
 Simulation::Simulation(int width, int height, int ants_count) 
-: width_(width), height_(height), ants_count_(ants_count), rng_(std::random_device{}()), dist_(-90.0f, 90.0f),
-anthill_(10, 10)
+: width_(width), height_(height), ants_count_(ants_count), rng_(std::random_device{}()), angle_(-90.0f, 90.0f),
+anthill_(10, 10), x_coord_(0, width), y_coord_(0, height)
 {
     grid_.resize(width_*height_);
     ants_.reserve(ants_count_);
@@ -27,12 +27,19 @@ void Simulation::init() {
 void Simulation::update(float delta_time) {
     // Cells
     for (Cell& cell : grid_) {
-        cell.pheromone_.evaporate(0.01f);
+        cell.pheromone_.evaporate(delta_time);
+    }
+
+    // Food
+    try_spawn_food();
+    for (Food& food : food_) {
+        Cell& cell = get_cell(food.x_, food.y_);
+        cell.pheromone_.set(PheromoneType::Food, 1.0f);
     }
 
     // Ants
     for (Ant& ant : ants_) {
-        ant.angle_ += dist_(rng_) * delta_time * 10.f;
+        ant.angle_ += angle_(rng_) * delta_time * 10.f;
         
         float radians = ant.angle_ * (std::numbers::pi / 180);
         ant.x_ += std::cos(radians) * ant.speed_ * delta_time;
@@ -62,4 +69,16 @@ Cell& Simulation::get_cell(int x, int y) {
 
 const Cell& Simulation::get_cell(int x, int y) const {
     return grid_.at(width_*y + x);
+}
+
+void Simulation::try_spawn_food() {
+    std::bernoulli_distribution distribution(spawn_food_chance_);
+    spawn_food_chance_ = std::clamp(spawn_food_chance_+0.00001f, 0.0f, 0.1f);
+
+    if (distribution(rng_)) {
+        float x = x_coord_(rng_);
+        float y = y_coord_(rng_);
+        Food food {x, y};
+        food_.push_back(food);
+    }
 }

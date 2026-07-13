@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 
 enum class PheromoneType {
     Food,
@@ -24,9 +25,13 @@ struct Pheromone {
         intensities_[static_cast<size_t>(type)] = std::clamp(value, 0.0f, 1.0f);
     }
     
-    void evaporate(float delta) {
+    void evaporate(float delta_time) {
         for (auto& intensity : intensities_) {
-            intensity = std::max(0.0f, intensity - delta);
+            float delta = delta_time * (intensity * intensity);
+            intensity -= delta;
+            if (intensity < 0.001f) {
+                intensity = 0.0f;
+            }
         }
     }
 };
@@ -57,4 +62,12 @@ struct Anthill
 struct Cell {
     Pheromone pheromone_;
     int food_units_ = 0;
+};
+
+struct Food {
+    float x_, y_;
+    int count_ = 0;
+
+    Food(float x, float y)
+    : x_(x), y_(y) {}
 };

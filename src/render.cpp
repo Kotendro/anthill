@@ -4,7 +4,7 @@
 #include <array>
 
 const std::array<Color, static_cast<size_t>(PheromoneType::Count)> PHEROMONE_COLORS = {
-    RED,   // Food
+    GREEN,   // Food
     BLUE,  // Home
 };
 
@@ -37,10 +37,19 @@ void draw_simulation(const Simulation& sim, int cell_size)
         }
     }
 
+    // Food
+    for (auto& food : sim.get_food()) {
+        float pixel_x = food.x_ * cell_size;
+        float pixel_y = food.y_ * cell_size;
+
+        DrawCircle(pixel_x,pixel_y, cell_size/4, ORANGE);
+    }
+
+
     // Ants
     for (auto& ant : sim.get_ants()) {
-        float pixel_x = ant.x_ * cell_size + cell_size/2;
-        float pixel_y = ant.y_ * cell_size + cell_size/2;
+        float pixel_x = ant.x_ * cell_size;
+        float pixel_y = ant.y_ * cell_size;
 
         DrawCircle(pixel_x,pixel_y, cell_size/4, RED);
     }
@@ -48,9 +57,9 @@ void draw_simulation(const Simulation& sim, int cell_size)
     // Anthill
     {
         auto& anthill = sim.get_anthill();
-        float pixel_x = anthill.x_ * cell_size + cell_size/2;
-        float pixel_y = anthill.y_ * cell_size + cell_size/2;
+        float pixel_x = anthill.x_ * cell_size;
+        float pixel_y = anthill.y_ * cell_size;
 
-        DrawCircle(pixel_x,pixel_y, cell_size/2, ORANGE);
+        DrawCircle(pixel_x,pixel_y, cell_size/2, RED);
     }
 }
