@@ -25,6 +25,7 @@ private:
     sol::state lua_;
 
     Cell& get_cell(int cell_x, int cell_y);
+    std::vector<Cell*> get_cells_in_range(float x, float y, float range);
     void try_spawn_food();
 
 public:
