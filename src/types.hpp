@@ -25,18 +25,25 @@ struct Pheromone {
         intensities_[static_cast<size_t>(type)] = std::clamp(value, 0.0f, 1.0f);
     }
 
-    void add(PheromoneType type, float value, float floor) {
+    void add(PheromoneType type, float value) {
         size_t idx = static_cast<size_t>(type);
         float curr = intensities_[idx];
 
-        if (curr < floor) {
-            intensities_[idx] = std::min(curr + value, floor);
+        intensities_[idx] = curr + value * (1.0f - curr);
+    }
+
+    void floor_add(PheromoneType type, float value) {
+        size_t idx = static_cast<size_t>(type);
+        float curr = intensities_[idx];
+
+        if (curr < value) {
+            intensities_[idx] = std::min(curr + value, value);
         }
     }
 
-    void evaporate(float delta_time) {
+    void evaporate(float delta_time, float decay_rate=1.0f) {
         for (auto& intensity : intensities_) {
-            float delta = delta_time * (intensity * intensity);
+            float delta = delta_time * decay_rate *(intensity * intensity);
             intensity -= delta;
             if (intensity < 0.001f) {
                 intensity = 0.0f;
@@ -51,7 +58,7 @@ struct Ant
     float angle_; // В градусах
     float speed_=10.0f;
     bool has_food=false;
-    // Pheromone pheromone_out_;
+    Pheromone pheromone_out_;
 
     Ant(float x, float y, float angle)
     : x_(x), y_(y), angle_(angle) {}

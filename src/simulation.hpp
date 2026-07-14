@@ -3,6 +3,7 @@
 #include <vector>
 #include <random>
 #include <sol/sol.hpp>
+#include <utility>
 #include "types.hpp"
 
 class Simulation
@@ -16,7 +17,7 @@ private:
 
     float spawn_food_chance_ = 0.000f;
     int total_food_ = 0;
-    const int MAX_FOOD_ = 10;
+    const int MAX_FOOD_ = 0;
 
     std::mt19937 rng_;
     std::uniform_real_distribution<float> angle_;
@@ -29,7 +30,7 @@ private:
     void set_pheromone_in_radius(float center_x, float center_y, float radius, PheromoneType ptype);
     void try_spawn_food();
     void spawn_food();
-    void spawn_anthill();
+    std::pair<float, float> spawn_anthill();
 
 public:
     const Cell& get_cell (int cell_x, int cell_y) const;

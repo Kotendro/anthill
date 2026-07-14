@@ -23,11 +23,11 @@ x_coord_(0, width), y_coord_(0, height)
 
 void Simulation::init() {
     // Anthill
-    spawn_anthill();
+    std::pair<float, float> coord = spawn_anthill();
 
     // Ants
     for (int i=0; i < ants_count_; i++) {
-        Ant ant{x_coord_(rng_), y_coord_(rng_), 0};
+        Ant ant{coord.first, coord.second, 0};
         ants_.push_back(ant);
     }
 }
@@ -37,7 +37,7 @@ void Simulation::update(float delta_time) {
     for (int y = 0; y < height_; ++y) {
         for (int x = 0; x < width_; ++x) {
             Cell& cell = get_cell(x, y);
-            cell.pheromone_.evaporate(delta_time);
+            cell.pheromone_.evaporate(delta_time, 0.01f);
 
             if (cell.food_.has_value()) {
                 Food& food = cell.food_.value();
@@ -71,17 +71,24 @@ void Simulation::update(float delta_time) {
         if (ant.y_ >= height_) ant.y_ -= height_;
 
         Cell& cell = get_cell(ant.x_, ant.y_);
-        cell.pheromone_.add(PheromoneType::Home, 0.7f, 0.7f);
-
-        if (!ant.has_food && cell.food_.has_value()) {
-            Food& food = cell.food_.value();
-            food.count_ -= 1;
-            total_food_ -= 1;
-            if (food.count_ == 0) {
-                cell.food_.reset();
-            }
-            ant.has_food = true;
+        if (cell.anthill_.has_value()) {
+            ant.pheromone_out_.set(PheromoneType::Home, 1.0f);
+            // ...
         }
+        if (cell.food_.has_value()) {
+            ant.pheromone_out_.set(PheromoneType::Food, 1.0f);
+            // ...
+        }
+
+        if (ant.has_food) {
+            float intensity = ant.pheromone_out_.get(PheromoneType::Food);
+            cell.pheromone_.add(PheromoneType::Food, intensity);
+        } else {
+            float intensity = ant.pheromone_out_.get(PheromoneType::Home);
+            cell.pheromone_.add(PheromoneType::Home, intensity);
+        }
+
+        ant.pheromone_out_.evaporate(delta_time, 1.5f);
     }
 }
 
@@ -123,7 +130,7 @@ void Simulation::set_pheromone_in_radius(float center_x, float center_y, float r
                 float norma = distance/radius;
                 float intensity = 1.0f - (norma*norma);
                 Cell& cell = get_cell(x, y);
-                cell.pheromone_.add(ptype, intensity, intensity);
+                cell.pheromone_.floor_add(ptype, intensity);
             }
         }
     }
@@ -159,7 +166,7 @@ void Simulation::spawn_food() {
     }
 }
 
-void Simulation::spawn_anthill() {
+std::pair<float, float> Simulation::spawn_anthill() {
     float raw_x = x_coord_(rng_);
     float raw_y = y_coord_(rng_);
 
@@ -176,4 +183,6 @@ void Simulation::spawn_anthill() {
             relative_y,
         };
     }
+
+    return std::pair<float, float> {raw_x, raw_y};
 }
