@@ -11,12 +11,12 @@ private:
     int width_;
     int height_;
     int ants_count_;
-    float spawn_food_chance_ = 0.000f;
-    const int max_food_ = 10;
     std::vector<Cell> grid_;
     std::vector<Ant> ants_;
-    std::vector<Food> food_;
-    Anthill anthill_;
+
+    float spawn_food_chance_ = 0.000f;
+    int total_food_ = 0;
+    const int MAX_FOOD_ = 10;
 
     std::mt19937 rng_;
     std::uniform_real_distribution<float> angle_;
@@ -28,6 +28,8 @@ private:
     Cell& get_cell(int cell_x, int cell_y);
     void set_pheromone_in_radius(float center_x, float center_y, float radius, PheromoneType ptype);
     void try_spawn_food();
+    void spawn_food();
+    void spawn_anthill();
 
 public:
     const Cell& get_cell (int cell_x, int cell_y) const;
@@ -35,8 +37,6 @@ public:
     const int get_height() const {return height_;}
     const std::vector<Cell>& get_grid() const {return grid_;}
     const std::vector<Ant>& get_ants() const {return ants_;}
-    const std::vector<Food>& get_food() const {return food_;}
-    const Anthill get_anthill() const {return anthill_;}
 
     Simulation(int width, int height, int ant_count);
     void init();

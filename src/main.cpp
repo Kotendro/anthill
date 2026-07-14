@@ -12,7 +12,7 @@ int main(void)
     const int CELL_SIZE = 10;
     const int SCREEN_WIDTH = WIDTH*CELL_SIZE;
     const int SCREEN_HEIGHT = HEIGHT*CELL_SIZE;
-    const int ANTS_COUNT = 10;
+    const int ANTS_COUNT = 20;
 
 
     Simulation sim(WIDTH, HEIGHT, ANTS_COUNT);

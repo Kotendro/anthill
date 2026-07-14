@@ -9,7 +9,7 @@
 
 Simulation::Simulation(int width, int height, int ants_count) 
 : width_(width), height_(height), ants_count_(ants_count), rng_(std::random_device{}()), angle_(-90.0f, 90.0f),
-anthill_(10.5, 10.5), x_coord_(0, width), y_coord_(0, height)
+x_coord_(0, width), y_coord_(0, height)
 {
     grid_.resize(width_*height_);
     ants_.reserve(ants_count_);
@@ -22,26 +22,40 @@ anthill_(10.5, 10.5), x_coord_(0, width), y_coord_(0, height)
 }
 
 void Simulation::init() {
+    // Anthill
+    spawn_anthill();
+
     // Ants
     for (int i=0; i < ants_count_; i++) {
-        Ant ant{anthill_.x_, anthill_.y_, 0};
+        Ant ant{x_coord_(rng_), y_coord_(rng_), 0};
         ants_.push_back(ant);
     }
 }
 
 void Simulation::update(float delta_time) {
     // Cells
-    for (Cell& cell : grid_) {
-        cell.pheromone_.evaporate(delta_time);
+    for (int y = 0; y < height_; ++y) {
+        for (int x = 0; x < width_; ++x) {
+            Cell& cell = get_cell(x, y);
+            cell.pheromone_.evaporate(delta_time);
+
+            if (cell.food_.has_value()) {
+                Food& food = cell.food_.value();
+                float pixel_x = x + food.relative_x_;
+                float pixel_y = y + food.relative_y_;
+                set_pheromone_in_radius(pixel_x, pixel_y, 2.5f, PheromoneType::Food);
+            }
+            if (cell.anthill_.has_value()) {
+                Anthill& anthil = cell.anthill_.value();
+                float pixel_x = x + anthil.relative_x_;
+                float pixel_y = y + anthil.relative_y_;
+                set_pheromone_in_radius(pixel_x, pixel_y, 3.0f, PheromoneType::Home);
+            }
+        }
     }
 
     // Food
-    if (food_.size() < max_food_) {
-        try_spawn_food();
-    }
-    for (Food& food : food_) {
-        set_pheromone_in_radius(food.x_, food.y_, 1.0f, PheromoneType::Food);
-    }
+    try_spawn_food();
 
     // Ants
     for (Ant& ant : ants_) {
@@ -58,10 +72,17 @@ void Simulation::update(float delta_time) {
 
         Cell& cell = get_cell(ant.x_, ant.y_);
         cell.pheromone_.add(PheromoneType::Home, 0.7f, 0.7f);
-    }
 
-    // Anthill
-    set_pheromone_in_radius(anthill_.x_, anthill_.y_, 3.0f, PheromoneType::Home);
+        if (!ant.has_food && cell.food_.has_value()) {
+            Food& food = cell.food_.value();
+            food.count_ -= 1;
+            total_food_ -= 1;
+            if (food.count_ == 0) {
+                cell.food_.reset();
+            }
+            ant.has_food = true;
+        }
+    }
 }
 
 Cell& Simulation::get_cell(int x, int y) {
@@ -112,10 +133,47 @@ void Simulation::try_spawn_food() {
     std::bernoulli_distribution distribution(spawn_food_chance_);
     spawn_food_chance_ = std::clamp(spawn_food_chance_+0.00001f, 0.0f, 0.1f);
 
-    if (distribution(rng_)) {
-        float x = x_coord_(rng_);
-        float y = y_coord_(rng_);
-        Food food {x, y};
-        food_.push_back(food);
+    if (distribution(rng_) && total_food_<MAX_FOOD_) {
+        spawn_food();
+        total_food_++;
+    }
+}
+
+void Simulation::spawn_food() {
+    float raw_x = x_coord_(rng_);
+    float raw_y = y_coord_(rng_);
+
+    int cell_x = static_cast<int>(raw_x);
+    int cell_y = static_cast<int>(raw_y);
+
+    float relative_x = raw_x - static_cast<float>(cell_x);
+    float relative_y = raw_y - static_cast<float>(cell_y);
+
+    Cell& cell = get_cell(cell_x, cell_y);
+    if (!cell.food_.has_value() && !cell.anthill_.has_value()) {
+        cell.food_ = Food{
+            relative_x,
+            relative_y,
+            1
+        };
+    }
+}
+
+void Simulation::spawn_anthill() {
+    float raw_x = x_coord_(rng_);
+    float raw_y = y_coord_(rng_);
+
+    int cell_x = static_cast<int>(raw_x);
+    int cell_y = static_cast<int>(raw_y);
+
+    float relative_x = raw_x - static_cast<float>(cell_x);
+    float relative_y = raw_y - static_cast<float>(cell_y);
+
+    Cell& cell = get_cell(cell_x, cell_y);
+    if (!cell.anthill_.has_value() && !cell.anthill_.has_value()) {
+        cell.anthill_ = Anthill{
+            relative_x,
+            relative_y,
+        };
     }
 }
