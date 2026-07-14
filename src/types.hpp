@@ -24,7 +24,16 @@ struct Pheromone {
     void set(PheromoneType type, float value) {
         intensities_[static_cast<size_t>(type)] = std::clamp(value, 0.0f, 1.0f);
     }
-    
+
+    void add(PheromoneType type, float value, float floor) {
+        size_t idx = static_cast<size_t>(type);
+        float curr = intensities_[idx];
+
+        if (curr < floor) {
+            intensities_[idx] = std::min(curr + value, floor);
+        }
+    }
+
     void evaporate(float delta_time) {
         for (auto& intensity : intensities_) {
             float delta = delta_time * (intensity * intensity);

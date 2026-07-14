@@ -3,6 +3,7 @@
 #include <numbers>
 #include <cmath>
 #include <random>
+#include <iostream>
 
 
 
@@ -35,12 +36,11 @@ void Simulation::update(float delta_time) {
     }
 
     // Food
-    try_spawn_food();
+    if (food_.size() < max_food_) {
+        try_spawn_food();
+    }
     for (Food& food : food_) {
-        auto cells = get_cells_in_range(food.x_, food.y_, 0.5f);
-        for (Cell* cell_p : cells) {
-            cell_p->pheromone_.set(PheromoneType::Food, 1.0f);
-        }
+        set_pheromone_in_radius(food.x_, food.y_, 1.0f, PheromoneType::Food);
     }
 
     // Ants
@@ -57,14 +57,11 @@ void Simulation::update(float delta_time) {
         if (ant.y_ >= height_) ant.y_ -= height_;
 
         Cell& cell = get_cell(ant.x_, ant.y_);
-        cell.pheromone_.set(PheromoneType::Home, 0.9f);
+        cell.pheromone_.add(PheromoneType::Home, 0.7f, 0.7f);
     }
 
     // Anthill
-    auto cells = get_cells_in_range(anthill_.x_, anthill_.y_, 1.0f);
-    for (Cell* cell_p : cells) {
-        cell_p->pheromone_.set(PheromoneType::Home, 1.0f);
-    }
+    set_pheromone_in_radius(anthill_.x_, anthill_.y_, 3.0f, PheromoneType::Home);
 }
 
 Cell& Simulation::get_cell(int x, int y) {
@@ -81,13 +78,11 @@ const Cell& Simulation::get_cell(int x, int y) const {
     return grid_[width_ * safe_y + safe_x];
 }
 
-std::vector<Cell*> Simulation::get_cells_in_range(float center_x, float center_y, float range) {
-    std::vector<Cell*> found_cells;
-
-    float min_x = center_x - range;
-    float max_x = center_x + range;
-    float min_y = center_y - range;
-    float max_y = center_y + range;
+void Simulation::set_pheromone_in_radius(float center_x, float center_y, float radius, PheromoneType ptype) {
+    float min_x = center_x - radius;
+    float max_x = center_x + radius;
+    float min_y = center_y - radius;
+    float max_y = center_y + radius;
 
     int start_x = static_cast<int>(std::floor(min_x));
     int end_x   = static_cast<int>(std::floor(max_x));
@@ -96,11 +91,21 @@ std::vector<Cell*> Simulation::get_cells_in_range(float center_x, float center_y
 
     for (int y = start_y; y <= end_y; ++y) {
         for (int x = start_x; x <= end_x; ++x) {
-            found_cells.push_back(&get_cell(x, y));
+            float cell_center_x = x + 0.5f;
+            float cell_center_y = y + 0.5f;
+
+            float dx = cell_center_x - center_x;
+            float dy = cell_center_y - center_y;
+            float distance = std::sqrt(dx * dx + dy * dy);
+
+            if (radius > distance) {
+                float norma = distance/radius;
+                float intensity = 1.0f - (norma*norma);
+                Cell& cell = get_cell(x, y);
+                cell.pheromone_.add(ptype, intensity, intensity);
+            }
         }
     }
-
-    return found_cells;
 }
 
 void Simulation::try_spawn_food() {

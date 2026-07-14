@@ -12,6 +12,7 @@ private:
     int height_;
     int ants_count_;
     float spawn_food_chance_ = 0.000f;
+    const int max_food_ = 10;
     std::vector<Cell> grid_;
     std::vector<Ant> ants_;
     std::vector<Food> food_;
@@ -25,7 +26,7 @@ private:
     sol::state lua_;
 
     Cell& get_cell(int cell_x, int cell_y);
-    std::vector<Cell*> get_cells_in_range(float x, float y, float range);
+    void set_pheromone_in_radius(float center_x, float center_y, float radius, PheromoneType ptype);
     void try_spawn_food();
 
 public:
