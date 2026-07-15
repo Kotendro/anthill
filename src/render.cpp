@@ -68,7 +68,7 @@ void draw_simulation(const Simulation& sim, int cell_size)
         float pixel_y = ant.y_ * cell_size;
 
         DrawCircle(pixel_x,pixel_y, cell_size/4, RED);
-        if (ant.has_food) {
+        if (ant.has_food_) {
             DrawCircle(pixel_x,pixel_y-cell_size/4, cell_size/5, ORANGE);
         }
     }

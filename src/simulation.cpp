@@ -8,7 +8,8 @@
 
 
 Simulation::Simulation(int width, int height, int ants_count) 
-: width_(width), height_(height), ants_count_(ants_count), rng_(std::random_device{}()), angle_(-45.0f, 45.0f),
+: width_(width), height_(height), ants_count_(ants_count), rng_(std::random_device{}()),
+wander_angle_(-10.0f, 10.0f), start_angle_(0.0f, 360.0f),
 x_crd_(0, width), y_crd_(0, height), count_(3, 10)
 {
     grid_.resize(width_*height_);
@@ -23,11 +24,11 @@ x_crd_(0, width), y_crd_(0, height), count_(3, 10)
 
 void Simulation::init() {
     // Anthill
-    Vector2 coord = spawn_anthill();
+    Vector2 crd = spawn_anthill();
 
     // Ants
     for (int i=0; i < ants_count_; i++) {
-        Ant ant{coord.x, coord.y, 0};
+        Ant ant{crd.x, crd.y, start_angle_(rng_)};
         ants_.push_back(ant);
     }
 }
@@ -73,7 +74,7 @@ void Simulation::update(float delta_time) {
             left_relative, left_intst, forward_relative, forward_intst, right_relative, right_intst
         );
         
-        float wander_noise = angle_(rng_); 
+        float wander_noise = wander_angle_(rng_); 
         float steer_force = left_intst + forward_intst + right_intst;
         ant.move(angle_relative, wander_noise, steer_force, delta_time);
 
@@ -83,8 +84,8 @@ void Simulation::update(float delta_time) {
         Cell& cell = get_cell(Vector2{ant.x_, ant.y_});
         if (cell.anthill_.has_value()) {
             float intensity = cell.pheromone_.get(PheromoneType::Home);
-            ant.pheromone_out_.set(PheromoneType::Home, intensity);
-            if (ant.has_food) {
+            ant.pheromone_out_.set(PheromoneType::Home, intensity*0.2);
+            if (ant.has_food_) {
                 Anthill& anthill = cell.anthill_.value();
                 anthill.food_storage_ += 1;
                 ant.drop_food();
@@ -92,8 +93,8 @@ void Simulation::update(float delta_time) {
         }
         if (cell.food_.has_value()) {
             float intensity = cell.pheromone_.get(PheromoneType::Food);
-            ant.pheromone_out_.set(PheromoneType::Food, intensity);
-            if (!ant.has_food) {
+            ant.pheromone_out_.set(PheromoneType::Food, intensity*0.2);
+            if (!ant.has_food_) {
                 Food& food = cell.food_.value();
                 food.count_ -= 1;
                 ant.pick_up_food();
@@ -104,12 +105,12 @@ void Simulation::update(float delta_time) {
             }
         }
 
-        if (ant.has_food) {
+        if (ant.has_food_) {
             float intensity = ant.pheromone_out_.get(PheromoneType::Food);
-            cell.pheromone_.add(PheromoneType::Food, intensity);
+            cell.pheromone_.add(PheromoneType::Food, intensity*0.5);
         } else {
             float intensity = ant.pheromone_out_.get(PheromoneType::Home);
-            cell.pheromone_.add(PheromoneType::Home, intensity);
+            cell.pheromone_.add(PheromoneType::Home, intensity*0.5);
         }
 
         ant.pheromone_out_.evaporate(delta_time, 1.5f);
@@ -140,6 +141,9 @@ void Simulation::set_pheromone_in_radius(Vector2 center, float radius, Pheromone
     int end_x   = std::floor(max_x);
     int start_y = std::floor(min_y);
     int end_y   = std::floor(max_y);
+    int center_x   = std::floor(center.x);
+    int center_y   = std::floor(center.y);
+
 
     for (float y = start_y; y <= end_y; y+=1.0f) {
         for (float x = start_x; x <= end_x; x+=1.0f) {
@@ -151,10 +155,15 @@ void Simulation::set_pheromone_in_radius(Vector2 center, float radius, Pheromone
             float distance = std::sqrt(dx * dx + dy * dy);
 
             if (radius > distance) {
-                float norma = distance/radius;
-                float intensity = 1.0f - (norma*norma);
+                float intensity;
+                if (static_cast<int>(x) == center_x && static_cast<int>(y) == center_y) {
+                    intensity = 1.0f;
+                } else {
+                    float norma = distance/radius;
+                    intensity = 1.0f - (norma*norma);
+                }
                 Cell& cell = get_cell(Vector2{x, y});
-                cell.pheromone_.floor_add(ptype, intensity);
+                cell.pheromone_.static_add(ptype, intensity);
             }
         }
     }

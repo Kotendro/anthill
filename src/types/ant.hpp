@@ -8,29 +8,30 @@ class Ant
 public:
     float x_, y_;
     float angle_; // В градусах
-    float speed_=10.0f;
-    bool has_food=false;
+    const float MOVEMENT_SPEED_=8.0f; // В секунду
+    const float TURN_SPEED_=90.0f; // В секунду
+    bool has_food_=false;
     Pheromone pheromone_out_;
 
     const float ANTENNAE_ANGLE = 45.0f; // Угол развода усиков
-    const float ANTENNAE_LENGTH = 1.0f; 
+    const float ANTENNAE_LENGTH = 2.0f; 
 
     Ant(float x, float y, float angle)
     : x_(x), y_(y), angle_(angle) {}
 
     PheromoneType get_search_type() const {
-        return has_food ? PheromoneType::Home : PheromoneType::Food;
+        return has_food_ ? PheromoneType::Home : PheromoneType::Food;
     }
 
     void move(float angle_relative, float wander_noise, float steer_force, float delta_time) {
         float steer_blend = std::clamp(steer_force, 0.0f, 1.0f);
 
-        angle_ += angle_relative * steer_blend * delta_time * 45.0f;
-        angle_ += wander_noise * (1.0f - steer_blend) * delta_time * 45.0f;
+        angle_ += angle_relative * steer_blend * (TURN_SPEED_ * delta_time);
+        angle_ += wander_noise * (2.0f - steer_blend) * (TURN_SPEED_ * delta_time);
 
         float radians = angle_ * (std::numbers::pi / 180.0f);
-        x_ += std::cos(radians) * speed_ * delta_time;
-        y_ += std::sin(radians) * speed_ * delta_time;
+        x_ += std::cos(radians) * (MOVEMENT_SPEED_ * delta_time);
+        y_ += std::sin(radians) * (MOVEMENT_SPEED_ * delta_time);
     }
 
     void wrap_position(int width, int height) {
@@ -41,12 +42,12 @@ public:
     }
 
     void pick_up_food() {
-        has_food = true;
+        has_food_ = true;
         angle_ += 180.0f; 
     }
 
     void drop_food() {
-        has_food = false;
+        has_food_ = false;
         angle_ += 180.0f;
     }
 

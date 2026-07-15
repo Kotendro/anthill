@@ -26,19 +26,21 @@ struct Pheromone {
         intensities_[static_cast<size_t>(type)] = std::clamp(value, 0.0f, 1.0f);
     }
 
-    void add(PheromoneType type, float value) {
+    void add(PheromoneType type, float value, float limit=0.8f) {
         size_t idx = static_cast<size_t>(type);
         float curr = intensities_[idx];
 
-        intensities_[idx] = curr + value * (1.0f - curr);
+        if (curr < limit) {
+            intensities_[idx] = curr + value * (limit - curr);
+        }
     }
 
-    void floor_add(PheromoneType type, float value) {
+    void static_add(PheromoneType type, float value) {
         size_t idx = static_cast<size_t>(type);
         float curr = intensities_[idx];
 
         if (curr < value) {
-            intensities_[idx] = std::min(curr + value, value);
+            intensities_[idx] = value;
         }
     }
 

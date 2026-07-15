@@ -21,7 +21,8 @@ private:
     const int MAX_FOOD_ = 2;
 
     std::mt19937 rng_;
-    std::uniform_real_distribution<float> angle_;
+    std::uniform_real_distribution<float> start_angle_;
+    std::uniform_real_distribution<float> wander_angle_;
     std::uniform_real_distribution<float> x_crd_;
     std::uniform_real_distribution<float> y_crd_;
     std::uniform_int_distribution<int> count_;
