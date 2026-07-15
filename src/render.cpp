@@ -4,7 +4,7 @@
 #include <array>
 
 const std::array<Color, static_cast<size_t>(PheromoneType::Count)> PHEROMONE_COLORS = {
-    GREEN,   // Food
+    GREEN, // Food
     BLUE,  // Home
 };
 

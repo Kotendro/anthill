@@ -1,24 +1,28 @@
-#include "simulation.hpp"
-#include "render.hpp"
-#include "raylib.h"
 #include <ctime>
 #include <cstdlib>
-#include <sol/sol.hpp> 
+#include <sol/sol.hpp>
+#include "raylib.h"
+
+#include "simulation.hpp"
+#include "render.hpp"
+
+#include "config.hpp"
+
 
 int main(void)
 {
-    const int WIDTH = 80;
-    const int HEIGHT = 60;
-    const int CELL_SIZE = 10;
-    const int SCREEN_WIDTH = WIDTH*CELL_SIZE;
-    const int SCREEN_HEIGHT = HEIGHT*CELL_SIZE;
-    const int ANTS_COUNT = 20;
-
-
-    Simulation sim(WIDTH, HEIGHT, ANTS_COUNT);
+    Simulation sim(
+        Config::World::WIDTH_IN_CELLS,
+        Config::World::HEIGHT_IN_CELLS,
+        Config::World::ANTS_COUNT
+    );
     sim.init();
 
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT,"anthill");
+    InitWindow(
+        Config::World::SCREEN_WIDTH,
+        Config::World::SCREEN_HEIGHT,
+        "anthill"
+    );
     SetTargetFPS(60);
 
     while (!WindowShouldClose())
@@ -28,7 +32,7 @@ int main(void)
 
         BeginDrawing();
             ClearBackground(RAYWHITE);
-            draw_simulation(sim, CELL_SIZE);
+            draw_simulation(sim, Config::World::CELL_SIZE);
         EndDrawing();
     }
     CloseWindow();

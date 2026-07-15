@@ -3,18 +3,20 @@
 #include <numbers>
 #include "types/pheromone.hpp"
 
+#include "config.hpp"
+
 class Ant
 {
 public:
     float x_, y_;
     float angle_; // В градусах
-    const float MOVEMENT_SPEED_=8.0f; // В секунду
-    const float TURN_SPEED_=90.0f; // В секунду
     bool has_food_=false;
     Pheromone pheromone_out_;
 
-    const float ANTENNAE_ANGLE = 45.0f; // Угол развода усиков
-    const float ANTENNAE_LENGTH = 2.0f; 
+    const float movement_speed_ = Config::Ant::MOVEMENT_SPEED;
+    const float rotation_speed_ = Config::Ant::ROTATION_SPEED;
+    const float antennae_angle_ = Config::Ant::ANTENNAE_ANGLE;
+    const float antennae_length_= Config::Ant::ANTENNAE_LENGTH;
 
     Ant(float x, float y, float angle)
     : x_(x), y_(y), angle_(angle) {}
@@ -26,12 +28,12 @@ public:
     void move(float angle_relative, float wander_noise, float steer_force, float delta_time) {
         float steer_blend = std::clamp(steer_force, 0.0f, 1.0f);
 
-        angle_ += angle_relative * steer_blend * (TURN_SPEED_ * delta_time);
-        angle_ += wander_noise * (2.0f - steer_blend) * (TURN_SPEED_ * delta_time);
+        angle_ += angle_relative * steer_blend * (rotation_speed_ * delta_time);
+        angle_ += wander_noise * (2.0f - steer_blend) * (rotation_speed_ * delta_time);
 
         float radians = angle_ * (std::numbers::pi / 180.0f);
-        x_ += std::cos(radians) * (MOVEMENT_SPEED_ * delta_time);
-        y_ += std::sin(radians) * (MOVEMENT_SPEED_ * delta_time);
+        x_ += std::cos(radians) * (movement_speed_ * delta_time);
+        y_ += std::sin(radians) * (movement_speed_ * delta_time);
     }
 
     void wrap_position(int width, int height) {
@@ -54,8 +56,8 @@ public:
     Vector2 get_antennae_relative(float angle_offset = 0.0f) {
         /* Получаем координату относительно муравья по длине антенны и углу */
         float radians = (angle_ + angle_offset) * (std::numbers::pi / 180);
-        float x = std::cos(radians) * ANTENNAE_LENGTH;
-        float y = std::sin(radians) * ANTENNAE_LENGTH;
+        float x = std::cos(radians) * antennae_length_;
+        float y = std::sin(radians) * antennae_length_;
         return Vector2{x, y};
     }
 

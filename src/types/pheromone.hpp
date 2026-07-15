@@ -4,6 +4,8 @@
 #include <cmath>
 #include <algorithm>
 
+#include "config.hpp"
+
 enum class PheromoneType {
     Food,
     Home,
@@ -26,12 +28,12 @@ struct Pheromone {
         intensities_[static_cast<size_t>(type)] = std::clamp(value, 0.0f, 1.0f);
     }
 
-    void add(PheromoneType type, float value, float limit=0.8f) {
+    void add(float delta_time, PheromoneType type, float value, float limit) {
         size_t idx = static_cast<size_t>(type);
         float curr = intensities_[idx];
 
         if (curr < limit) {
-            intensities_[idx] = curr + value * (limit - curr);
+            intensities_[idx] = curr + value * (limit - curr) * Config::Pheromone::DEPOSIT_RATE * delta_time;
         }
     }
 
@@ -46,9 +48,9 @@ struct Pheromone {
 
     void evaporate(float delta_time, float decay_rate=1.0f) {
         for (auto& intensity : intensities_) {
-            float delta = delta_time * decay_rate *(intensity * intensity);
+            float delta = delta_time * decay_rate * (intensity * intensity);
             intensity -= delta;
-            if (intensity < 0.001f) {
+            if (intensity < Config::Pheromone::EVAPORATION_THRESHOLD) {
                 intensity = 0.0f;
             }
         }

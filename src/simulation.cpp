@@ -5,12 +5,18 @@
 #include <random>
 #include <iostream>
 
+#include "config.hpp"
 
-
-Simulation::Simulation(int width, int height, int ants_count) 
-: width_(width), height_(height), ants_count_(ants_count), rng_(std::random_device{}()),
-wander_angle_(-10.0f, 10.0f), start_angle_(0.0f, 360.0f),
-x_crd_(0, width), y_crd_(0, height), count_(3, 10)
+Simulation::Simulation(int width, int height, int ants_count) :
+    width_(width),
+    height_(height),
+    ants_count_(ants_count),
+    rng_(std::random_device{}()),
+    wander_angle_(-Config::Ant::WANDER_ANGLE, Config::Ant::WANDER_ANGLE),
+    start_angle_(0.0f, 360.0f),
+    x_crd_(0, width),
+    y_crd_(0, height),
+    count_(Config::World::MIN_COUNT_IN_FOOD, Config::World::MAX_COUNT_IN_FOOD)
 {
     grid_.resize(width_*height_);
     ants_.reserve(ants_count_);
@@ -38,7 +44,7 @@ void Simulation::update(float delta_time) {
     for (float y = 0.0f; y < height_; y+= 1.0f) {
         for (float x = 0.0f; x < width_; x+= 1.0f) {
             Cell& cell = get_cell(Vector2{x, y});
-            cell.pheromone_.evaporate(delta_time, 0.01f);
+            cell.pheromone_.evaporate(delta_time, Config::Pheromone::MAP_DECAY_RATE);
 
             if (cell.food_.has_value()) {
                 Food& food = cell.food_.value();
@@ -56,15 +62,15 @@ void Simulation::update(float delta_time) {
     }
 
     // Food
-    try_spawn_food();
+    try_spawn_food(delta_time);
 
     // Ants
     for (Ant& ant : ants_) {
         PheromoneType search_type = ant.get_search_type();
 
-        Vector2 left_relative = ant.get_antennae_relative(-ant.ANTENNAE_ANGLE);
+        Vector2 left_relative = ant.get_antennae_relative(-ant.antennae_angle_);
         Vector2 forward_relative = ant.get_antennae_relative(0.0f);
-        Vector2 right_relative = ant.get_antennae_relative(ant.ANTENNAE_ANGLE);
+        Vector2 right_relative = ant.get_antennae_relative(ant.antennae_angle_);
 
         float left_intst = get_cell(Vector2{ant.x_ + left_relative.x, ant.y_ + left_relative.y}).pheromone_.get(search_type);
         float forward_intst = get_cell(Vector2{ant.x_ + forward_relative.x, ant.y_ + forward_relative.y}).pheromone_.get(search_type);
@@ -84,7 +90,7 @@ void Simulation::update(float delta_time) {
         Cell& cell = get_cell(Vector2{ant.x_, ant.y_});
         if (cell.anthill_.has_value()) {
             float intensity = cell.pheromone_.get(PheromoneType::Home);
-            ant.pheromone_out_.set(PheromoneType::Home, intensity*0.2);
+            ant.pheromone_out_.set(PheromoneType::Home, intensity);
             if (ant.has_food_) {
                 Anthill& anthill = cell.anthill_.value();
                 anthill.food_storage_ += 1;
@@ -93,7 +99,7 @@ void Simulation::update(float delta_time) {
         }
         if (cell.food_.has_value()) {
             float intensity = cell.pheromone_.get(PheromoneType::Food);
-            ant.pheromone_out_.set(PheromoneType::Food, intensity*0.2);
+            ant.pheromone_out_.set(PheromoneType::Food, intensity);
             if (!ant.has_food_) {
                 Food& food = cell.food_.value();
                 food.count_ -= 1;
@@ -107,13 +113,13 @@ void Simulation::update(float delta_time) {
 
         if (ant.has_food_) {
             float intensity = ant.pheromone_out_.get(PheromoneType::Food);
-            cell.pheromone_.add(PheromoneType::Food, intensity*0.5);
+            cell.pheromone_.add(delta_time, PheromoneType::Food, intensity, Config::Pheromone::ORDINARY_LIMIT);
         } else {
             float intensity = ant.pheromone_out_.get(PheromoneType::Home);
-            cell.pheromone_.add(PheromoneType::Home, intensity*0.5);
+            cell.pheromone_.add(delta_time, PheromoneType::Home, intensity, Config::Pheromone::ORDINARY_LIMIT);
         }
 
-        ant.pheromone_out_.evaporate(delta_time, 1.5f);
+        ant.pheromone_out_.evaporate(delta_time, Config::Pheromone::ANT_DECAY_RATE);
     }
 }
 
@@ -169,11 +175,15 @@ void Simulation::set_pheromone_in_radius(Vector2 center, float radius, Pheromone
     }
 }
 
-void Simulation::try_spawn_food() {
+void Simulation::try_spawn_food(float delta_time) {
     std::bernoulli_distribution distribution(spawn_food_chance_);
-    spawn_food_chance_ = std::clamp(spawn_food_chance_+0.00001f, 0.0f, 0.1f);
+    spawn_food_chance_ = std::clamp(
+        spawn_food_chance_+(Config::World::FOOD_SPAWN_GROWTH * delta_time),
+        0.0f,
+        Config::World::MAX_FOOD_SPAWN_CHANCE
+    );
 
-    if (distribution(rng_) && total_food_<MAX_FOOD_) {
+    if (distribution(rng_) && total_food_<Config::World::MAX_FOOD) {
         spawn_food();
         total_food_++;
     }

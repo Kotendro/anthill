@@ -18,7 +18,6 @@ private:
 
     float spawn_food_chance_ = 0.000f;
     int total_food_ = 0;
-    const int MAX_FOOD_ = 2;
 
     std::mt19937 rng_;
     std::uniform_real_distribution<float> start_angle_;
@@ -31,7 +30,7 @@ private:
 
     Cell& get_cell(Vector2 crd);
     void set_pheromone_in_radius(Vector2 center, float radius, PheromoneType ptype);
-    void try_spawn_food();
+    void try_spawn_food(float delta_time);
     void spawn_food();
     Vector2 spawn_anthill();
 
