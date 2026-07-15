@@ -14,9 +14,9 @@ void draw_simulation(const Simulation& sim, int cell_size)
     int height = sim.get_height();
 
     // Cells
-    for (int y=0; y<height; y+=1) {
-        for (int x=0; x<width; x+=1) {
-            const Cell& cell = sim.get_cell(x, y);
+    for (float y=0.0f; y<height; y+=1.0f) {
+        for (float x=0.0f; x<width; x+=1.0f) {
+            const Cell& cell = sim.get_cell(Vector2{x,y});
 
             DrawRectangle(x*cell_size, y*cell_size, cell_size-1, cell_size-1, LIGHTGRAY);
 
@@ -40,9 +40,9 @@ void draw_simulation(const Simulation& sim, int cell_size)
         }
     }
 
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            const Cell& cell = sim.get_cell(x, y);
+    for (float y = 0.0f; y < height; y+=1.0f) {
+        for (float x = 0.0f; x < width; x+=1.0f) {
+            const Cell& cell = sim.get_cell(Vector2{x,y});
 
             // Food
             if (cell.food_.has_value()) {
@@ -68,5 +68,8 @@ void draw_simulation(const Simulation& sim, int cell_size)
         float pixel_y = ant.y_ * cell_size;
 
         DrawCircle(pixel_x,pixel_y, cell_size/4, RED);
+        if (ant.has_food) {
+            DrawCircle(pixel_x,pixel_y-cell_size/4, cell_size/5, ORANGE);
+        }
     }
 }

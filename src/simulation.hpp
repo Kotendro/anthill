@@ -4,6 +4,7 @@
 #include <random>
 #include <sol/sol.hpp>
 #include <utility>
+#include "raylib.h"
 #include "types.hpp"
 
 class Simulation
@@ -17,23 +18,24 @@ private:
 
     float spawn_food_chance_ = 0.000f;
     int total_food_ = 0;
-    const int MAX_FOOD_ = 0;
+    const int MAX_FOOD_ = 2;
 
     std::mt19937 rng_;
     std::uniform_real_distribution<float> angle_;
-    std::uniform_real_distribution<float> x_coord_;
-    std::uniform_real_distribution<float> y_coord_;
+    std::uniform_real_distribution<float> x_crd_;
+    std::uniform_real_distribution<float> y_crd_;
+    std::uniform_int_distribution<int> count_;
 
     sol::state lua_;
 
-    Cell& get_cell(int cell_x, int cell_y);
-    void set_pheromone_in_radius(float center_x, float center_y, float radius, PheromoneType ptype);
+    Cell& get_cell(Vector2 crd);
+    void set_pheromone_in_radius(Vector2 center, float radius, PheromoneType ptype);
     void try_spawn_food();
     void spawn_food();
-    std::pair<float, float> spawn_anthill();
+    Vector2 spawn_anthill();
 
 public:
-    const Cell& get_cell (int cell_x, int cell_y) const;
+    const Cell& get_cell (Vector2 crd) const;
     const int get_width() const {return width_;}
     const int get_height() const {return height_;}
     const std::vector<Cell>& get_grid() const {return grid_;}

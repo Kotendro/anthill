@@ -8,8 +8,8 @@
 
 
 Simulation::Simulation(int width, int height, int ants_count) 
-: width_(width), height_(height), ants_count_(ants_count), rng_(std::random_device{}()), angle_(-90.0f, 90.0f),
-x_coord_(0, width), y_coord_(0, height)
+: width_(width), height_(height), ants_count_(ants_count), rng_(std::random_device{}()), angle_(-45.0f, 45.0f),
+x_crd_(0, width), y_crd_(0, height), count_(3, 10)
 {
     grid_.resize(width_*height_);
     ants_.reserve(ants_count_);
@@ -23,33 +23,33 @@ x_coord_(0, width), y_coord_(0, height)
 
 void Simulation::init() {
     // Anthill
-    std::pair<float, float> coord = spawn_anthill();
+    Vector2 coord = spawn_anthill();
 
     // Ants
     for (int i=0; i < ants_count_; i++) {
-        Ant ant{coord.first, coord.second, 0};
+        Ant ant{coord.x, coord.y, 0};
         ants_.push_back(ant);
     }
 }
 
 void Simulation::update(float delta_time) {
     // Cells
-    for (int y = 0; y < height_; ++y) {
-        for (int x = 0; x < width_; ++x) {
-            Cell& cell = get_cell(x, y);
+    for (float y = 0.0f; y < height_; y+= 1.0f) {
+        for (float x = 0.0f; x < width_; x+= 1.0f) {
+            Cell& cell = get_cell(Vector2{x, y});
             cell.pheromone_.evaporate(delta_time, 0.01f);
 
             if (cell.food_.has_value()) {
                 Food& food = cell.food_.value();
                 float pixel_x = x + food.relative_x_;
                 float pixel_y = y + food.relative_y_;
-                set_pheromone_in_radius(pixel_x, pixel_y, 2.5f, PheromoneType::Food);
+                set_pheromone_in_radius(Vector2{pixel_x, pixel_y}, 2.5f, PheromoneType::Food);
             }
             if (cell.anthill_.has_value()) {
                 Anthill& anthil = cell.anthill_.value();
                 float pixel_x = x + anthil.relative_x_;
                 float pixel_y = y + anthil.relative_y_;
-                set_pheromone_in_radius(pixel_x, pixel_y, 3.0f, PheromoneType::Home);
+                set_pheromone_in_radius(Vector2{pixel_x, pixel_y}, 3.0f, PheromoneType::Home);
             }
         }
     }
@@ -59,25 +59,49 @@ void Simulation::update(float delta_time) {
 
     // Ants
     for (Ant& ant : ants_) {
-        ant.angle_ += angle_(rng_) * delta_time * 10.f;
+        PheromoneType search_type = ant.get_search_type();
+
+        Vector2 left_relative = ant.get_antennae_relative(-ant.ANTENNAE_ANGLE);
+        Vector2 forward_relative = ant.get_antennae_relative(0.0f);
+        Vector2 right_relative = ant.get_antennae_relative(ant.ANTENNAE_ANGLE);
+
+        float left_intst = get_cell(Vector2{ant.x_ + left_relative.x, ant.y_ + left_relative.y}).pheromone_.get(search_type);
+        float forward_intst = get_cell(Vector2{ant.x_ + forward_relative.x, ant.y_ + forward_relative.y}).pheromone_.get(search_type);
+        float right_intst = get_cell(Vector2{ant.x_ + right_relative.x, ant.y_ + right_relative.y}).pheromone_.get(search_type);
+
+        float angle_relative = ant.get_pheromone_angle_relative(
+            left_relative, left_intst, forward_relative, forward_intst, right_relative, right_intst
+        );
         
-        float radians = ant.angle_ * (std::numbers::pi / 180);
-        ant.x_ += std::cos(radians) * ant.speed_ * delta_time;
-        ant.y_ += std::sin(radians) * ant.speed_ * delta_time;
+        float wander_noise = angle_(rng_); 
+        float steer_force = left_intst + forward_intst + right_intst;
+        ant.move(angle_relative, wander_noise, steer_force, delta_time);
 
-        if (ant.x_ < 0) ant.x_ += width_;
-        if (ant.x_ >= width_) ant.x_ -= width_;
-        if (ant.y_ < 0) ant.y_ += height_;
-        if (ant.y_ >= height_) ant.y_ -= height_;
+        ant.wrap_position(width_, height_);
 
-        Cell& cell = get_cell(ant.x_, ant.y_);
+
+        Cell& cell = get_cell(Vector2{ant.x_, ant.y_});
         if (cell.anthill_.has_value()) {
-            ant.pheromone_out_.set(PheromoneType::Home, 1.0f);
-            // ...
+            float intensity = cell.pheromone_.get(PheromoneType::Home);
+            ant.pheromone_out_.set(PheromoneType::Home, intensity);
+            if (ant.has_food) {
+                Anthill& anthill = cell.anthill_.value();
+                anthill.food_storage_ += 1;
+                ant.drop_food();
+            }
         }
         if (cell.food_.has_value()) {
-            ant.pheromone_out_.set(PheromoneType::Food, 1.0f);
-            // ...
+            float intensity = cell.pheromone_.get(PheromoneType::Food);
+            ant.pheromone_out_.set(PheromoneType::Food, intensity);
+            if (!ant.has_food) {
+                Food& food = cell.food_.value();
+                food.count_ -= 1;
+                ant.pick_up_food();
+                if (food.count_ <= 0) {
+                    cell.food_.reset();
+                    total_food_ -= 1;
+                }
+            }
         }
 
         if (ant.has_food) {
@@ -92,44 +116,44 @@ void Simulation::update(float delta_time) {
     }
 }
 
-Cell& Simulation::get_cell(int x, int y) {
-    int safe_x = (x % width_ + width_) % width_;
-    int safe_y = (y % height_ + height_) % height_;
+Cell& Simulation::get_cell(Vector2 crd) {
+    int safe_x = (static_cast<int>(crd.x) % width_ + width_) % width_;
+    int safe_y = (static_cast<int>(crd.y) % height_ + height_) % height_;
 
     return grid_[width_ * safe_y + safe_x];
 }
 
-const Cell& Simulation::get_cell(int x, int y) const {
-    int safe_x = (x % width_ + width_) % width_;
-    int safe_y = (y % height_ + height_) % height_;
+const Cell& Simulation::get_cell(Vector2 crd) const {
+    int safe_x = (static_cast<int>(crd.x) % width_ + width_) % width_;
+    int safe_y = (static_cast<int>(crd.y) % height_ + height_) % height_;
 
     return grid_[width_ * safe_y + safe_x];
 }
 
-void Simulation::set_pheromone_in_radius(float center_x, float center_y, float radius, PheromoneType ptype) {
-    float min_x = center_x - radius;
-    float max_x = center_x + radius;
-    float min_y = center_y - radius;
-    float max_y = center_y + radius;
+void Simulation::set_pheromone_in_radius(Vector2 center, float radius, PheromoneType ptype) {
+    float min_x = center.x - radius;
+    float max_x = center.x + radius;
+    float min_y = center.y - radius;
+    float max_y = center.y + radius;
 
-    int start_x = static_cast<int>(std::floor(min_x));
-    int end_x   = static_cast<int>(std::floor(max_x));
-    int start_y = static_cast<int>(std::floor(min_y));
-    int end_y   = static_cast<int>(std::floor(max_y));
+    int start_x = std::floor(min_x);
+    int end_x   = std::floor(max_x);
+    int start_y = std::floor(min_y);
+    int end_y   = std::floor(max_y);
 
-    for (int y = start_y; y <= end_y; ++y) {
-        for (int x = start_x; x <= end_x; ++x) {
+    for (float y = start_y; y <= end_y; y+=1.0f) {
+        for (float x = start_x; x <= end_x; x+=1.0f) {
             float cell_center_x = x + 0.5f;
             float cell_center_y = y + 0.5f;
 
-            float dx = cell_center_x - center_x;
-            float dy = cell_center_y - center_y;
+            float dx = cell_center_x - center.x;
+            float dy = cell_center_y - center.y;
             float distance = std::sqrt(dx * dx + dy * dy);
 
             if (radius > distance) {
                 float norma = distance/radius;
                 float intensity = 1.0f - (norma*norma);
-                Cell& cell = get_cell(x, y);
+                Cell& cell = get_cell(Vector2{x, y});
                 cell.pheromone_.floor_add(ptype, intensity);
             }
         }
@@ -147,36 +171,30 @@ void Simulation::try_spawn_food() {
 }
 
 void Simulation::spawn_food() {
-    float raw_x = x_coord_(rng_);
-    float raw_y = y_coord_(rng_);
+    float raw_x = x_crd_(rng_);
+    float raw_y = y_crd_(rng_);
 
-    int cell_x = static_cast<int>(raw_x);
-    int cell_y = static_cast<int>(raw_y);
+    float relative_x = raw_x - std::trunc(raw_x);
+    float relative_y = raw_y - std::trunc(raw_y);
 
-    float relative_x = raw_x - static_cast<float>(cell_x);
-    float relative_y = raw_y - static_cast<float>(cell_y);
-
-    Cell& cell = get_cell(cell_x, cell_y);
+    Cell& cell = get_cell(Vector2{raw_x, raw_y});
     if (!cell.food_.has_value() && !cell.anthill_.has_value()) {
         cell.food_ = Food{
             relative_x,
             relative_y,
-            1
+            count_(rng_)
         };
     }
 }
 
-std::pair<float, float> Simulation::spawn_anthill() {
-    float raw_x = x_coord_(rng_);
-    float raw_y = y_coord_(rng_);
+Vector2 Simulation::spawn_anthill() {
+    float raw_x = x_crd_(rng_);
+    float raw_y = y_crd_(rng_);
 
-    int cell_x = static_cast<int>(raw_x);
-    int cell_y = static_cast<int>(raw_y);
+    float relative_x = raw_x - std::trunc(raw_x);
+    float relative_y = raw_y - std::trunc(raw_y);
 
-    float relative_x = raw_x - static_cast<float>(cell_x);
-    float relative_y = raw_y - static_cast<float>(cell_y);
-
-    Cell& cell = get_cell(cell_x, cell_y);
+    Cell& cell = get_cell(Vector2{raw_x, raw_y});
     if (!cell.anthill_.has_value() && !cell.anthill_.has_value()) {
         cell.anthill_ = Anthill{
             relative_x,
@@ -184,5 +202,5 @@ std::pair<float, float> Simulation::spawn_anthill() {
         };
     }
 
-    return std::pair<float, float> {raw_x, raw_y};
+    return Vector2 {raw_x, raw_y};
 }
