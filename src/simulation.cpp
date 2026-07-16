@@ -66,6 +66,8 @@ void Simulation::update(float delta_time) {
 
     // Ants
     for (Ant& ant : ants_) {
+        ant.energy_ -= Config::Ant::ENERGY_DECAY * delta_time;
+
         PheromoneType search_type = ant.get_search_type();
 
         Vector2 left_relative = ant.get_antennae_relative(-ant.antennae_angle_);
@@ -89,17 +91,23 @@ void Simulation::update(float delta_time) {
 
         Cell& cell = get_cell(Vector2{ant.x_, ant.y_});
         if (cell.anthill_.has_value()) {
+            Anthill& anthill = cell.anthill_.value();
+
             float intensity = cell.pheromone_.get(PheromoneType::Home);
             ant.pheromone_out_.set(PheromoneType::Home, intensity);
+
             if (ant.has_food_) {
-                Anthill& anthill = cell.anthill_.value();
-                anthill.food_storage_ += 1;
+                anthill.food_storage_ += 1.0f;
                 ant.drop_food();
             }
+
+            float food = anthill.get_food(ant.get_required_food());
+            ant.eat(food);
         }
         if (cell.food_.has_value()) {
             float intensity = cell.pheromone_.get(PheromoneType::Food);
             ant.pheromone_out_.set(PheromoneType::Food, intensity);
+
             if (!ant.has_food_) {
                 Food& food = cell.food_.value();
                 food.count_ -= 1;
@@ -121,6 +129,10 @@ void Simulation::update(float delta_time) {
 
         ant.pheromone_out_.evaporate(delta_time, Config::Pheromone::ANT_DECAY_RATE);
     }
+
+    std::erase_if(ants_, [](const Ant& ant) {
+        return ant.energy_ <= 0.0f;
+    });
 }
 
 Cell& Simulation::get_cell(Vector2 crd) {

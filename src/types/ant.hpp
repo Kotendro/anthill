@@ -10,13 +10,14 @@ class Ant
 public:
     float x_, y_;
     float angle_; // В градусах
+    float energy_ = Config::Ant::MAX_ENERGY;
     bool has_food_=false;
     Pheromone pheromone_out_;
 
-    const float movement_speed_ = Config::Ant::MOVEMENT_SPEED;
-    const float rotation_speed_ = Config::Ant::ROTATION_SPEED;
-    const float antennae_angle_ = Config::Ant::ANTENNAE_ANGLE;
-    const float antennae_length_= Config::Ant::ANTENNAE_LENGTH;
+    float movement_speed_ = Config::Ant::MOVEMENT_SPEED;
+    float rotation_speed_ = Config::Ant::ROTATION_SPEED;
+    float antennae_angle_ = Config::Ant::ANTENNAE_ANGLE;
+    float antennae_length_= Config::Ant::ANTENNAE_LENGTH;
 
     Ant(float x, float y, float angle)
     : x_(x), y_(y), angle_(angle) {}
@@ -74,5 +75,14 @@ public:
         while (relative_angle < -180.0f) relative_angle += 360.0f;
 
         return relative_angle;
+    }
+
+    float get_required_food() {
+        /* Необходимое количество энергии для полного насыщения */
+        return (Config::Ant::MAX_ENERGY - energy_);
+    }
+
+    void eat(float food) {
+        energy_ += std::clamp(food, 0.0f, Config::Ant::MAX_ENERGY);
     }
 };

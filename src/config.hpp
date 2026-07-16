@@ -31,6 +31,8 @@ namespace Config {
         inline constexpr float ANTENNAE_ANGLE = 45.0f;  // В гр.  | Угол развода усиков
         inline constexpr float ANTENNAE_LENGTH = 2.0f;  // В кл.
         inline constexpr float WANDER_ANGLE = 5.0f;     // В гр.  | Резкость поворота пустом месте
+        inline constexpr float ENERGY_DECAY = 0.02f;     // В сек. | Затрата энергии в секунду
+        inline constexpr float MAX_ENERGY = 1.0f;
     }
 
     namespace Pheromone {
