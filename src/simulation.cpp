@@ -4,6 +4,7 @@
 #include <cmath>
 #include <random>
 #include <iostream>
+#include <algorithm>
 
 #include "config.hpp"
 
@@ -16,7 +17,7 @@ Simulation::Simulation(int width, int height, int ants_count) :
     start_angle_(0.0f, 360.0f),
     x_crd_(0, width),
     y_crd_(0, height),
-    count_(Config::World::MIN_COUNT_IN_FOOD, Config::World::MAX_COUNT_IN_FOOD)
+    food_value_(Config::World::MIN_VALUE_IN_FOOD, Config::World::MAX_VALUE_IN_FOOD)
 {
     grid_.resize(width_*height_);
     ants_.reserve(ants_count_);
@@ -110,9 +111,9 @@ void Simulation::update(float delta_time) {
 
             if (!ant.has_food_) {
                 Food& food = cell.food_.value();
-                food.count_ -= 1;
+                food.value_ -= std::min(1.0f, food.value_);
                 ant.pick_up_food();
-                if (food.count_ <= 0) {
+                if (food.value_ <= 0.0f) {
                     cell.food_.reset();
                     total_food_ -= 1;
                 }
@@ -213,7 +214,7 @@ void Simulation::spawn_food() {
         cell.food_ = Food{
             relative_x,
             relative_y,
-            count_(rng_)
+            food_value_(rng_)
         };
     }
 }

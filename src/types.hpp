@@ -26,11 +26,11 @@ struct Anthill
 
 struct Food {
     float relative_x_, relative_y_;
-    int count_ = 0;
+    float value_ = 0;
     // Pheromone pheromone_out_;
 
-    Food(float relative_x, float relative_y, int count)
-    : relative_x_(relative_x), relative_y_(relative_y), count_(count) {}
+    Food(float relative_x, float relative_y, float value)
+    : relative_x_(relative_x), relative_y_(relative_y), value_(value) {}
 };
 
 struct Cell {

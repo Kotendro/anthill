@@ -24,7 +24,7 @@ private:
     std::uniform_real_distribution<float> wander_angle_;
     std::uniform_real_distribution<float> x_crd_;
     std::uniform_real_distribution<float> y_crd_;
-    std::uniform_int_distribution<int> count_;
+    std::uniform_real_distribution<float> food_value_;
 
     sol::state lua_;
 
