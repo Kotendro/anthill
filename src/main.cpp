@@ -1,7 +1,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <sol/sol.hpp>
-#include "raylib.h"
+#include <raylib.h>
 
 #include "simulation.hpp"
 #include "render.hpp"

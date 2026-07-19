@@ -19,8 +19,8 @@ namespace Config {
         inline constexpr int SCREEN_HEIGHT = HEIGHT_IN_CELLS*CELL_SIZE;
 
         inline const int MAX_FOOD = 5; // Максимальное количество еды в мире
-        inline constexpr float FOOD_SPAWN_GROWTH = 0.01f; // В сек. | На сколько повышается вероятность появления еды
-        inline constexpr float MAX_FOOD_SPAWN_CHANCE = 0.1f;
+        inline constexpr float FOOD_SPAWN_GROWTH = 0.1f; // В сек. | На сколько повышается вероятность появления еды
+        inline constexpr float MAX_FOOD_SPAWN_CHANCE = 0.5f;
         inline constexpr int MIN_VALUE_IN_FOOD = 2.0f;  // Минимальное количество раз, сколько можно взять еды с одного плода
         inline constexpr int MAX_VALUE_IN_FOOD = 10.0f; // Максимальное количество раз, сколько можно взять еды с одного плода
     }
@@ -31,7 +31,7 @@ namespace Config {
         inline constexpr float ANTENNAE_ANGLE = 45.0f;  // В гр.  | Угол развода усиков
         inline constexpr float ANTENNAE_LENGTH = 2.0f;  // В кл.
         inline constexpr float WANDER_ANGLE = 5.0f;     // В гр.  | Резкость поворота пустом месте
-        inline constexpr float ENERGY_DECAY = 0.02f;     // В сек. | Затрата энергии в секунду
+        inline constexpr float ENERGY_DECAY = 0.00f;    // В сек. | Затрата энергии в секунду
         inline constexpr float MAX_ENERGY = 1.0f;
     }
 

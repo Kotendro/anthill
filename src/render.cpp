@@ -1,7 +1,8 @@
-#include "render.hpp"
-#include "raylib.h"
-#include "types.hpp"
+#include <raylib.h>
 #include <array>
+#include "render.hpp"
+#include "types.hpp"
+
 
 const std::array<Color, static_cast<size_t>(PheromoneType::Count)> PHEROMONE_COLORS = {
     GREEN, // Food
@@ -10,13 +11,14 @@ const std::array<Color, static_cast<size_t>(PheromoneType::Count)> PHEROMONE_COL
 
 void draw_simulation(const Simulation& sim, int cell_size)
 {
-    int width = sim.get_width();
-    int height = sim.get_height();
+    const Grid& grid = sim.get_grid();
+    int width = grid.get_width();
+    int height = grid.get_height();
 
     // Cells
     for (float y=0.0f; y<height; y+=1.0f) {
         for (float x=0.0f; x<width; x+=1.0f) {
-            const Cell& cell = sim.get_cell(Vector2{x,y});
+            const Cell& cell = grid.get_cell(Vector2{x,y});
 
             DrawRectangle(x*cell_size, y*cell_size, cell_size-1, cell_size-1, LIGHTGRAY);
 
@@ -42,7 +44,7 @@ void draw_simulation(const Simulation& sim, int cell_size)
 
     for (float y = 0.0f; y < height; y+=1.0f) {
         for (float x = 0.0f; x < width; x+=1.0f) {
-            const Cell& cell = sim.get_cell(Vector2{x,y});
+            const Cell& cell = grid.get_cell(Vector2{x,y});
 
             // Food
             if (cell.food_.has_value()) {
