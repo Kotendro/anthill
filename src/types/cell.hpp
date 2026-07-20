@@ -38,4 +38,10 @@ struct Cell {
 
     std::optional<Food> food_;
     std::optional<Anthill> anthill_;
+
+    void reset() {
+        pheromone_.reset();
+        food_.reset();
+        anthill_.reset();
+    }
 };

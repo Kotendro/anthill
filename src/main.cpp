@@ -2,20 +2,27 @@
 #include <cstdlib>
 #include <sol/sol.hpp>
 #include <raylib.h>
+#include <iostream>
 
 #include "simulation.hpp"
 #include "render.hpp"
 
-#include "config.hpp"
+#include "config_mapper.hpp"
 
 
 int main(void)
 {
-    Simulation sim(
-        Config::World::WIDTH_IN_CELLS,
-        Config::World::HEIGHT_IN_CELLS,
-        Config::World::ANTS_COUNT
-    );
+    sol::state lua;
+    lua.open_libraries(sol::lib::base, sol::lib::math);
+    try {
+        lua.script_file("scripts/config.lua");
+        Config::load_from_lua(lua);
+    } catch (const sol::error& e) {
+        std::cerr << "Lua config script error" << std::endl;
+        return -1;
+    }
+
+    Simulation sim(lua);
     sim.init();
 
     InitWindow(
@@ -27,6 +34,19 @@ int main(void)
 
     while (!WindowShouldClose())
     {
+        if (IsKeyPressed(KEY_R)) {
+            try {
+                lua.script_file("scripts/config.lua");
+                Config::load_from_lua(lua);
+                std::cout << "Lua config reloaded" << std::endl;
+            } catch (const sol::error& e) {
+                std::cerr << "Lua config script error" << std::endl;
+                return -1;
+            }
+            sim.reset();
+            SetWindowSize(Config::World::SCREEN_WIDTH, Config::World::SCREEN_HEIGHT);
+        }
+
         float delta_time = GetFrameTime();
         sim.update(delta_time);
 

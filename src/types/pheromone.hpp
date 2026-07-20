@@ -4,7 +4,7 @@
 #include <cmath>
 #include <algorithm>
 
-#include "config.hpp"
+#include "config_mapper.hpp"
 
 enum class PheromoneType {
     Food,
@@ -54,5 +54,9 @@ struct Pheromone {
                 intensity = 0.0f;
             }
         }
+    }
+
+    void reset() {
+        intensities_.fill(0.0f);
     }
 };

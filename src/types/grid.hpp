@@ -2,8 +2,9 @@
 
 #include <vector>
 #include <raylib.h>
+#include <functional>
 #include "types/cell.hpp"
-#include "config.hpp"
+#include "config_mapper.hpp"
 
 class Grid
 {
@@ -12,7 +13,7 @@ private:
     int height_;
     std::vector<Cell> cells_;
 
-    std::mt19937& rng_;
+    std::reference_wrapper<std::mt19937> rng_;
 
     std::uniform_real_distribution<float> x_crd_; // Распределение от 0 до width_
     std::uniform_real_distribution<float> y_crd_; // Распределение от 0 до height_
@@ -85,7 +86,6 @@ inline void Grid::update(float delta_time) {
     try_spawn_food(delta_time);
 }
 
-
 inline Cell& Grid::get_cell(Vector2 crd) {
     int safe_x = (static_cast<int>(crd.x) % width_ + width_) % width_;
     int safe_y = (static_cast<int>(crd.y) % height_ + height_) % height_;
@@ -156,7 +156,7 @@ inline void Grid::try_spawn_food(float delta_time) {
 
         std::bernoulli_distribution distribution(spawn_food_chance_);
         
-        if (distribution(rng_)) {
+        if (distribution(rng_.get())) {
             spawn_food();
             total_food_++;
             spawn_food_chance_ = 0.0f;
@@ -165,8 +165,8 @@ inline void Grid::try_spawn_food(float delta_time) {
 }
 
 inline void Grid::spawn_food() {
-    float raw_x = x_crd_(rng_);
-    float raw_y = y_crd_(rng_);
+    float raw_x = x_crd_(rng_.get());
+    float raw_y = y_crd_(rng_.get());
 
     float relative_x = raw_x - std::trunc(raw_x);
     float relative_y = raw_y - std::trunc(raw_y);
@@ -176,14 +176,14 @@ inline void Grid::spawn_food() {
         cell.food_ = Food{
             relative_x,
             relative_y,
-            food_value_(rng_)
+            food_value_(rng_.get())
         };
     }
 }
 
 inline Vector2 Grid::spawn_anthill() {
-    float raw_x = x_crd_(rng_);
-    float raw_y = y_crd_(rng_);
+    float raw_x = x_crd_(rng_.get());
+    float raw_y = y_crd_(rng_.get());
 
     float relative_x = raw_x - std::trunc(raw_x);
     float relative_y = raw_y - std::trunc(raw_y);

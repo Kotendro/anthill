@@ -4,7 +4,7 @@
 #include "types/pheromone.hpp"
 #include "types/grid.hpp"
 
-#include "config.hpp"
+#include "config_mapper.hpp"
 
 class Ant
 {
